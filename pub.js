@@ -8,7 +8,7 @@ app.use(cors());
 main().catch((err) => console.log(err));
 async function main() {
   await mongoose.connect(
-    "mongodb+srv://checker:8iL1JVGMlFHA0GrB@cluster0.szkayau.mongodb.net/"
+    "mongodb+srv://legendaryairforce:ASHWIN01012004@offpub.9t7fv.mongodb.net/"
   );
 }
 app.post("/status", async (req, res) => {
