@@ -6,5 +6,6 @@ const userpass = new Schema({
   password: String,
   id: Number,
   time: { type: String, default: "00:00" },
+  image: String,
 });
 module.exports = mongoose.model("Up", userpass);

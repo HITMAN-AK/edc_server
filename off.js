@@ -4,6 +4,7 @@ const app = exp.Router();
 const user = require("./user");
 const Up = require("./up");
 const cors = require("cors");
+const { spawn } = require("child_process");
 app.use(cors());
 main().catch((err) => console.log(err));
 async function main() {
@@ -47,20 +48,54 @@ app.post("/out", async (req, res) => {
     .then(res.json({ status: "sc" }));
 });
 app.post("/in", async (req, res) => {
-  const uid = await Up.where({ username: req.body.username }).select("uuid");
-  const uuid = uid[0].uuid;
-  await user
-    .updateOne(
-      { "departments.staff.user_id": uuid },
-      { $set: { "departments.$[outer].staff.$[inner].status": "i" } },
-      {
-        arrayFilters: [
-          { "outer.staff.user_id": uuid },
-          { "inner.user_id": uuid },
-        ],
+  const inputImage = req.body.image; 
+  const username = req.body.username;
+
+  const wi = await Up.where({ username: username }).select("image");
+  const storedImage = wi[0].image;
+
+  const pythonProcess = spawn("python", ["fd.py"]);
+
+  let result = "";
+  pythonProcess.stdout.on("data", (data) => {
+    result += data.toString();
+    console.log("Python output:", data.toString());
+  });
+  pythonProcess.stderr.on("data", (data) => {
+    console.error("Error:", data.toString());
+  });
+
+  pythonProcess.on("close", async (code) => {
+    if (code === 0) {
+      try {
+        const output = JSON.parse(result.trim()); 
+        if (output.verified) {
+          const uid = await Up.where({ username: username }).select("uuid");
+          const uuid = uid[0].uuid;
+          await user.updateOne(
+            { "departments.staff.user_id": uuid },
+            { $set: { "departments.$[outer].staff.$[inner].status": "i" } },
+            {
+              arrayFilters: [
+                { "outer.staff.user_id": uuid },
+                { "inner.user_id": uuid },
+              ],
+            }
+          );
+          res.json({ status: "sc" });
+        } else {
+          res.json({ status: "fl" });
+        }
+      } catch (err) {
+        console.error("Error parsing JSON:", err);
+        res.status(500).json({ error: "Failed to parse Python output" });
       }
-    )
-    .then(res.json({ status: "sc" }));
+    } else {
+      res.status(500).json({ error: "Python script failed" });
+    }
+  });
+  pythonProcess.stdin.write(JSON.stringify({ storedImage, inputImage }));
+  pythonProcess.stdin.end();
 });
 app.post("/od", async (req, res) => {
   const uid = await Up.where({ username: req.body.username }).select("uuid");
@@ -137,6 +172,7 @@ app.post("/newup", async (req, res) => {
   const uid = req.body.uuid;
   const uname = req.body.uname;
   const pass = req.body.pass;
+  const image = req.body.image;
   const x = Math.floor(Math.random() * 10000000000);
   const ua = await Up.findOne({ username: uname });
   if (ua !== null) {
@@ -147,6 +183,7 @@ app.post("/newup", async (req, res) => {
       username: uname,
       password: pass,
       id: x,
+      image: image,
     });
     nuser.save().then(() => {
       res.json({ status: "sc" });
