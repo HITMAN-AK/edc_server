@@ -33,6 +33,14 @@ app.post("/out", async (req, res) => {
   const time = await Up.where({ username: req.body.username }).select("time");
   const uuid = uid[0].uuid;
   console.log(req.body.time);
+  const staffDoc = await user.findOne(
+    { "departments.staff.user_id": uuid },
+    { "departments.staff.$": 1 }
+  );
+  const currentStatus = staffDoc.departments[0].staff[0].status;
+  if (currentStatus === "l") {
+    return res.json({ status: "f" }); 
+  }
   await Up.updateOne({ _id: time }, { time: req.body.time });
   await user
     .updateOne(
@@ -48,7 +56,7 @@ app.post("/out", async (req, res) => {
     .then(res.json({ status: "sc" }));
 });
 app.post("/in", async (req, res) => {
-  const inputImage = req.body.image; 
+  const inputImage = req.body.image;
   const username = req.body.username;
 
   const wi = await Up.where({ username: username }).select("image");
@@ -68,7 +76,7 @@ app.post("/in", async (req, res) => {
   pythonProcess.on("close", async (code) => {
     if (code === 0) {
       try {
-        const output = JSON.parse(result.trim()); 
+        const output = JSON.parse(result.trim());
         if (output.verified) {
           const uid = await Up.where({ username: username }).select("uuid");
           const uuid = uid[0].uuid;
