@@ -43,8 +43,8 @@ app.post("/gd", async (req, res) => {
 });
 const callAPI = async () => {
   try {
-    const res = await axios.get("http://localhost:800/public/gd");
-    console.log("API response:", res.data);
+    const res = await axios.get("https://smartgov-server.onrender.com/gd");
+    console.log("API response:");
   } catch (err) {
     console.error("Error calling API:", err.message);
   }
