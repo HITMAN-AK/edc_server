@@ -2,6 +2,8 @@ const exp = require("express");
 const mongoose = require("mongoose");
 const app = exp.Router();
 const user = require("./user");
+const axios = require("axios");
+const cron = require("node-cron");
 const Up = require("./up");
 const cors = require("cors");
 app.use(cors());
@@ -38,6 +40,17 @@ app.post("/status", async (req, res) => {
 app.post("/gd", async (req, res) => {
   const clg = await user.find();
   res.json({ det: clg });
+});
+const callAPI = async () => {
+  try {
+    const res = await axios.get("http://localhost:800/public/gd");
+    console.log("API response:", res.data);
+  } catch (err) {
+    console.error("Error calling API:", err.message);
+  }
+};
+cron.schedule("* * * * *", () => {
+  callAPI();
 });
 const staffMembers = [
   {
