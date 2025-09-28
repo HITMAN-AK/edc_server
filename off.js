@@ -6,6 +6,7 @@ const Up = require("./up");
 const cors = require("cors");
 const { spawn } = require("child_process");
 app.use(cors());
+app.use(exp.json());
 main().catch((err) => console.log(err));
 async function main() {
   await mongoose.connect(
